@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta Interactiva: Mepham E-commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- 
+    Chosen Palette: Mepham Minimalist (Blanco, Negro, Ámbar/Naranja)
+    Application Structure Plan: SPA con navegación lateral fija (sticky sidebar) que se desplaza a secciones. Las secciones incluyen: Resumen (con KPIs), Perfil del Cliente (interactivo), Objetivos, Alcance (con sub-secciones para Estructura, Funcionalidades con pestañas, y Cronograma con gráfico de Gantt de Chart.js), e Inversión (con gráficos de dona/pie para presupuesto y pagos). Esta estructura transforma un documento lineal en un dashboard explorable, permitiendo al cliente saltar a la sección de interés (ej. "Inversión") al instante, mejorando la usabilidad y el entendimiento.
+    Visualization & Content Choices: 1. KPIs (Visitas, Leads, Conversión) -> Goal: Informar -> Viz: Tarjetas de estadísticas (HTML/Tailwind) -> Interaction: Hover -> Justification: Acceso rápido a métricas de éxito. 2. Perfil "Laura Empoderada" -> Goal: Organizar -> Viz: Tarjetas lado a lado (HTML/Grid) -> Interaction: Ninguna -> Justification: Comparación clara de dolor vs. solución. 3. Estructura Web -> Goal: Organizar -> Viz: Diagrama de árbol simple (HTML/CSS/Tailwind) -> Interaction: Ninguna -> Justification: Visualización clara del sitemap. 4. Cronograma -> Goal: Mostrar Proceso -> Viz: Gráfico de barras horizontal flotante (Gantt) (Chart.js/Canvas) -> Interaction: Tooltip al hover -> Justification: Representación visual clara de la línea de tiempo de 9 semanas. 5. Inversión (Desglose) -> Goal: Proporciones -> Viz: Gráfico de Dona (Chart.js/Canvas) -> Interaction: Tooltip -> Justification: Entendimiento rápido del desglose del presupuesto. 6. Pago (Términos) -> Goal: Proporciones -> Viz: Gráfico de Pie (Chart.js/Canvas) -> Interaction: Tooltip -> Justification: Claridad en los términos de pago 50/50. 7. Funcionalidades -> Goal: Organizar -> Viz: Tabla HTML -> Interaction: Pestañas (Tabs) con JS para filtrar por categoría -> Justification: Reduce la carga cognitiva al no mostrar todas las funciones a la vez.
+    CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+        .nav-link {
+            @apply block w-full text-left px-4 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-all duration-200;
+        }
+        .nav-link.active {
+            @apply bg-orange-100 text-orange-700 font-semibold;
+        }
+        .stat-card {
+            @apply bg-white p-6 rounded-lg shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md;
+        }
+        .tab-button {
+            @apply px-4 py-2 font-medium text-sm rounded-md transition-all duration-200;
+        }
+        .tab-button.active {
+            @apply bg-orange-600 text-white shadow-sm;
+        }
+        .tab-button:not(.active) {
+            @apply text-gray-600 hover:bg-gray-100;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .sitemap-tree ul {
+            position: relative;
+            padding-left: 20px;
+        }
+        .sitemap-tree li {
+            position: relative;
+            padding-left: 20px;
+            list-style: none;
+        }
+        .sitemap-tree li::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-left: 1px solid #cbd5e1;
+            height: 100%;
+            width: 1px;
+        }
+        .sitemap-tree li:last-child::before {
+            height: 1.125rem;
+        }
+        .sitemap-tree li::after {
+            content: '';
+            position: absolute;
+            top: 1.125rem;
+            left: 0;
+            border-top: 1px solid #cbd5e1;
+            width: 15px;
+            height: 1px;
+        }
+        .sitemap-tree > li::before, .sitemap-tree > li::after {
+            display: none;
+        }
+        .sitemap-item {
+            @apply inline-block bg-white border border-gray-200 rounded-md px-3 py-1.5 text-sm font-medium shadow-sm;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <aside class="w-full md:w-64 bg-white border-r border-gray-200 p-4 md:sticky md:top-0 md:h-screen md:overflow-y-auto">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Mepham</h1>
+            <p class="text-sm text-gray-500 mb-6">Propuesta Interactiva</p>
+
+            <nav id="main-nav" class="space-y-1">
+                <a href="#resumen" class="nav-link active">Resumen y KPIs</a>
+                <a href="#cliente" class="nav-link">El Cliente Ideal</a>
+                <a href="#objetivos" class="nav-link">Objetivos Web</a>
+                <a href="#alcance" class="nav-link">Alcance y Fases</a>
+                <a href="#inversion" class="nav-link">Inversión</a>
+                <a href="#pasos" class="nav-link">Próximos Pasos</a>
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-10 space-y-12">
+            
+            <section id="resumen">
+                <div class="max-w-5xl">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Resumen del Proyecto</h2>
+                    <p class="text-lg text-gray-600 mb-8">
+                        Esta propuesta se enfoca en crear una experiencia digital que refleje su filosofía única: una plataforma de ventas (<strong>E-commerce</strong>) y un ecosistema de <strong>afiliación</strong> para construir una comunidad consciente. El proyecto se diseñará bajo el concepto de <strong>minimalismo aspiracional</strong> para convertir a la "Laura Empoderada" en clienta y afiliada.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="stat-card">
+                            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Inversión Total</h3>
+                            <p class="text-4xl font-bold text-gray-900 mt-2">$800.000</p>
+                            <p class="text-sm text-gray-500">COP (sin IVA)</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Tiempo Estimado</h3>
+                            <p class="text-4xl font-bold text-gray-900 mt-2">9</p>
+                            <p class="text-sm text-gray-500">Semanas de desarrollo</p>
+                        </div>
+                        <div class="stat-card bg-orange-50 border-orange-200">
+                            <h3 class="text-sm font-medium text-orange-600 uppercase tracking-wider">Solución Clave</h3>
+                            <p class="text-xl font-semibold text-orange-900 mt-2">E-commerce Esencial + Afiliados Básico</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold text-gray-900 mt-12 mb-6">Indicadores de Éxito (KPIs Objetivo)</h3>
+                    <p class="text-gray-600 mb-6">La estructura de la web estará diseñada para maximizar estos resultados en el primer trimestre post-lanzamiento.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="stat-card">
+                            <h3 class="text-sm font-medium text-gray-500">Tasa de Conversión</h3>
+                            <p class="text-3xl font-bold text-gray-900 mt-2">3-5%</p>
+                            <p class="text-sm text-gray-500">Objetivo de compra</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 class="text-sm font-medium text-gray-500">Nuevos Suscriptores</h3>
+                            <p class="text-3xl font-bold text-gray-900 mt-2">1.000</p>
+                            <p class="text-sm text-gray-500">Primer trimestre</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 class="text-sm font-medium text-gray-500">Visitas Mensuales</h3>
+                            <p class="text-3xl font-bold text-gray-900 mt-2">+10.000</p>
+                            <p class="text-sm text-gray-500">Primer trimestre</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="border-gray-200">
+
+            <section id="cliente">
+                <div class="max-w-5xl">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">El Cliente Ideal: "Laura Empoderada"</h2>
+                    <p class="text-lg text-gray-600 mb-8">
+                        Entender a su cliente es clave. La solución web está diseñada para abordar directamente sus frustraciones y conectar con sus deseos.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="text-xl font-semibold text-red-700 mb-4">Frustraciones (Puntos de Dolor)</h3>
+                            <ul class="list-disc list-outside space-y-2 pl-5 text-gray-700">
+                                <li>Falta de tiempo para rutinas complicadas.</li>
+                                <li>Productos grasosos, perfumes fuertes o fórmulas dudosas.</li>
+                                <li>Precios altos por <strong>packaging</strong> sobrevalorado.</li>
+                                <li>Sensación de inseguridad, de no gustarse al espejo.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-green-200 bg-green-50">
+                            <h3 class="text-xl font-semibold text-green-800 mb-4">Solución Web Mepham</h3>
+                            <ul class="list-disc list-outside space-y-2 pl-5 text-green-900">
+                                <li>Proceso de compra <strong>fácil y rápido</strong> (pocos clics).</li>
+                                <li>Diseño <strong>minimalista y premium</strong> que justifica la inversión.</li>
+                                <li><strong>Storytelling</strong> emocional para generar una conexión profunda.</li>
+                                <li>Contenido visual que irradia <strong>poder y transformación</strong>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="border-gray-200">
+
+            <section id="objetivos">
+                <div class="max-w-5xl">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Objetivos del Sitio Web</h2>
+                    <p class="text-lg text-gray-600 mb-8">
+                        El sitio cumplirá dos propósitos principales, ambos enfocados en el crecimiento del negocio.
+                    </p>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-1 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <span class="text-3xl">🛍️</span>
+                            <h3 class="text-xl font-semibold text-gray-900 mt-4 mb-2">Ventas Directas (E-commerce)</h3>
+                            <p class="text-gray-600">Permitir la compra fácil y rápida de los aceites corporales (y accesorios premium en el futuro) con una pasarela de pago funcional e intuitiva.</p>
+                        </div>
+                        <div class="flex-1 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <span class="text-3xl">🔗</span>
+                            <h3 class="text-xl font-semibold text-gray-900 mt-4 mb-2">Captación de Afiliados</h3>
+                            <p class="text-gray-600">Implementar una funcionalidad básica que permita a los interesados registrarse y obtener su link personalizado para generar ingresos extras.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="border-gray-200">
+
+            <section id="alcance">
+                <div class="max-w-5xl">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8">Alcance y Fases del Proyecto</h2>
+                    
+                    <div class="space-y-12">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-6">Estructura del Sitio Web (Sitemap) y Mockups</h3>
+                            
+                            <!-- Texto Descriptivo Restaurado -->
+                            <p class="text-gray-600 mb-4">
+                                El diseño se centra en una <strong>Landing Page de Venta altamente optimizada</strong> para la conversión, con una estructura ágil que minimiza los clics necesarios para completar una compra. Se aplica el principio de <strong>minimalismo aspiracional</strong> para que el sitio sea visualmente atractivo y fácil de navegar.
+                            </p>
+                            <!-- AVISO DE DISEÑO SOLICITADO -->
+                            <p class="text-sm text-orange-700 bg-orange-100 p-3 rounded-lg border border-orange-300 mb-6">
+                                <span class="font-bold">Nota de Diseño:</span> Estos mockups son una guía estructural (wireframes). El diseño visual final (*look & feel*), los colores y la disposición exacta de los elementos pueden ajustarse o cambiar durante la fase creativa UX/UI para maximizar el impacto y la conversión.
+                            </p>
+                            <p class="text-gray-600 mb-6">
+                                La estrategia se enfoca en que el usuario encuentre su producto y la narrativa de la marca (<strong>Storytelling</strong>) rápidamente, para luego ser redirigido a la compra o al registro como afiliado. Las páginas clave son: <strong>INICIO (Ritual), TIENDA (Shop), MEPHAM (Storytelling), AFILIADOS</strong> y <strong>CONTACTO</strong>.
+                            </p>
+                            <p class="text-gray-600 mb-6">
+                                A continuación, puedes navegar por los <strong>mockups esqueléticos</strong> para visualizar la estructura de cada una de estas páginas.
+                            </p>
+                            <!-- Fin Texto Descriptivo Restaurado -->
+
+                            <!-- Nuevo Navegador de Mockups -->
+                            <div class="mb-6">
+                                <nav id="mockup-tabs-nav" class="flex flex-wrap gap-2" aria-label="Mockup Tabs">
+                                    <button class="tab-button active" data-tab-mockup="mockup-inicio">INICIO (Ritual)</button>
+                                    <button class="tab-button" data-tab-mockup="mockup-tienda">TIENDA (Shop)</button>
+                                    <button class="tab-button" data-tab-mockup="mockup-mepham">MEPHAM (Storytelling)</button>
+                                    <button class="tab-button" data-tab-mockup="mockup-afiliados">AFILIADOS</button>
+                                    <button class="tab-button" data-tab-mockup="mockup-contacto">CONTACTO</button>
+                                </nav>
+                            </div>
+
+                            <!-- Contenedor de Mockups -->
+                            <div class="bg-white p-6 rounded-lg shadow-xl border-t-8 border-orange-600 min-h-[400px]">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Vista Esquelética: <span id="mockup-title">INICIO (Ritual)</span></h4>
+
+                                <!-- MOCKUP INICIO -->
+                                <div id="mockup-inicio" class="tab-content-mockup space-y-4">
+                                    <div class="h-40 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center text-gray-700 font-bold">HERO: IMPACTO VISUAL Y SLOGAN</div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="h-6 bg-orange-200 rounded animate-pulse text-xs text-center p-1">CTA Principal Comprar</div>
+                                        <div class="h-6 bg-gray-300 rounded animate-pulse text-xs text-center p-1">CTA Secundario Storytelling</div>
+                                    </div>
+                                    <div class="h-20 bg-gray-100 rounded-lg text-sm flex items-center justify-center border border-gray-200">Sección "Nuestro Ritual": Proceso simple</div>
+                                    <div class="grid grid-cols-3 gap-4 h-32">
+                                        <div class="bg-gray-200 rounded-lg flex items-center justify-center">Beneficio 1</div>
+                                        <div class="bg-gray-200 rounded-lg flex items-center justify-center">Beneficio 2</div>
+                                        <div class="bg-gray-200 rounded-lg flex items-center justify-center">Beneficio 3</div>
+                                    </div>
+                                </div>
+
+                                <!-- MOCKUP TIENDA -->
+                                <div id="mockup-tienda" class="tab-content-mockup hidden space-y-4">
+                                    <div class="grid grid-cols-12 gap-4">
+                                        <!-- Sidebar Filtros -->
+                                        <div class="col-span-12 md:col-span-3 bg-gray-100 p-3 rounded-lg space-y-2 min-h-20 md:min-h-96">
+                                            <div class="h-3 bg-gray-300 rounded w-3/4"></div>
+                                            <div class="h-3 bg-gray-300 rounded w-full"></div>
+                                            <div class="h-3 bg-gray-300 rounded w-2/3"></div>
+                                            <div class="pt-4"><div class="h-3 bg-gray-300 rounded w-3/4"></div></div>
+                                            <div class="h-3 bg-gray-300 rounded w-full"></div>
+                                        </div>
+                                        <!-- Grid Productos -->
+                                        <div class="col-span-12 md:col-span-9 grid grid-cols-2 md:grid-cols-3 gap-4">
+                                            <div class="h-40 bg-gray-200 rounded-lg flex flex-col justify-end p-2"><div class="h-3 w-3/4 bg-white/70 rounded mb-1"></div><div class="h-3 w-1/2 bg-orange-300 rounded"></div></div>
+                                            <div class="h-40 bg-gray-200 rounded-lg flex flex-col justify-end p-2"><div class="h-3 w-3/4 bg-white/70 rounded mb-1"></div><div class="h-3 w-1/2 bg-orange-300 rounded"></div></div>
+                                            <div class="h-40 bg-gray-200 rounded-lg flex flex-col justify-end p-2"><div class="h-3 w-3/4 bg-white/70 rounded mb-1"></div><div class="h-3 w-1/2 bg-orange-300 rounded"></div></div>
+                                            <div class="h-40 bg-gray-200 rounded-lg flex flex-col justify-end p-2"><div class="h-3 w-3/4 bg-white/70 rounded mb-1"></div><div class="h-3 w-1/2 bg-orange-300 rounded"></div></div>
+                                            <div class="h-40 bg-gray-200 rounded-lg flex flex-col justify-end p-2"><div class="h-3 w-3/4 bg-white/70 rounded mb-1"></div><div class="h-3 w-1/2 bg-orange-300 rounded"></div></div>
+                                            <div class="h-40 bg-gray-200 rounded-lg flex flex-col justify-end p-2"><div class="h-3 w-3/4 bg-white/70 rounded mb-1"></div><div class="h-3 w-1/2 bg-orange-300 rounded"></div></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- MOCKUP MEPHAM (Storytelling) -->
+                                <div id="mockup-mepham" class="tab-content-mockup hidden space-y-6">
+                                    <div class="h-8 w-1/3 bg-gray-300 rounded-lg">Título: Nuestra Filosofía</div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="space-y-3 p-4 bg-gray-50 rounded-lg">
+                                            <div class="h-4 bg-gray-200 rounded"></div>
+                                            <div class="h-4 bg-gray-200 rounded"></div>
+                                            <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                                            <div class="h-4 bg-gray-200 rounded"></div>
+                                            <div class="h-4 bg-gray-200 rounded w-4/6"></div>
+                                            <div class="h-4 bg-gray-200 rounded"></div>
+                                        </div>
+                                        <div class="h-40 bg-orange-100 border-2 border-dashed border-orange-400 rounded-lg flex items-center justify-center text-orange-700 font-semibold">Imagen/Video de Fundadora</div>
+                                    </div>
+                                    <div class="h-10 w-full bg-gray-100 rounded-lg text-sm flex items-center justify-center border border-gray-200">Sección de Transparencia (Ingredientes y Proceso)</div>
+                                </div>
+
+                                <!-- MOCKUP AFILIADOS -->
+                                <div id="mockup-afiliados" class="tab-content-mockup hidden space-y-6">
+                                    <div class="h-8 w-2/3 bg-gray-300 rounded-lg">Título: Únete a la Comunidad Mepham</div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="space-y-4 p-4 bg-gray-50 rounded-lg">
+                                            <div class="h-4 bg-gray-300 rounded w-3/4">Beneficios</div>
+                                            <div class="h-4 bg-gray-200 rounded"></div>
+                                            <div class="h-4 bg-gray-200 rounded"></div>
+                                            <div class="h-4 bg-gray-200 rounded"></div>
+                                        </div>
+                                        <div class="space-y-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                                            <div class="h-4 bg-orange-300 rounded w-3/4">Formulario de Registro</div>
+                                            <div class="h-8 bg-white border rounded p-2 text-sm">Campo Nombre</div>
+                                            <div class="h-8 bg-white border rounded p-2 text-sm">Campo Email</div>
+                                            <div class="h-8 bg-orange-600 rounded text-white font-semibold flex items-center justify-center">Botón Enviar</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- MOCKUP CONTACTO -->
+                                <div id="mockup-contacto" class="tab-content-mockup hidden space-y-6">
+                                    <div class="h-8 w-1/4 bg-gray-300 rounded-lg">Título: Hablemos</div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="space-y-3 p-4 bg-gray-50 rounded-lg">
+                                            <div class="h-8 bg-white border rounded p-2 text-sm">Formulario de Contacto (Texto)</div>
+                                            <div class="h-20 bg-white border rounded p-2 text-sm">Área de Mensaje</div>
+                                            <div class="h-8 bg-gray-600 rounded text-white font-semibold flex items-center justify-center">Botón Enviar</div>
+                                        </div>
+                                        <div class="space-y-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                                            <div class="h-4 bg-orange-300 rounded w-3/4">Información Directa</div>
+                                            <div class="h-4 bg-gray-700 rounded w-full text-white text-xs p-1 bg-gray-500">Email: info@mepham.com</div>
+                                            <div class="h-4 bg-gray-700 rounded w-full text-white text-xs p-1 bg-gray-500">WhatsApp: +57 3XX XXX XXXX</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-gray-600 mt-6 mb-6">El diagrama a continuación ilustra esta navegación simplificada:</p>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 sitemap-tree">
+                                <span class="sitemap-item text-orange-700 bg-orange-50 border-orange-200">MEPHAM.COM</span>
+                                <ul>
+                                    <li><span class="sitemap-item mt-3">INICIO (Home/Ritual)</span></li>
+                                    <li><span class="sitemap-item mt-3">TIENDA (Shop)</span></li>
+                                    <li><span class="sitemap-item mt-3">MEPHAM (Storytelling)</span></li>
+                                    <li><span class="sitemap-item mt-3">AFILIADOS</span></li>
+                                    <li><span class="sitemap-item mt-3">CONTACTO</span></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-6">Cronograma del Proyecto (9 Semanas)</h3>
+                            <!-- DESCRIPCIÓN AJUSTADA PARA EL CLIENTE -->
+                            <p class="text-gray-600 mb-6">Este plan de trabajo detalla la ejecución del proyecto a lo largo de 9 semanas, desde Noviembre hasta la primera semana de Enero. La duración de cada fase (Diseño, Desarrollo, etc.) se justifica por la complejidad y el nivel de detalle requerido, especialmente en la integración del E-commerce y la estructura de Afiliados. El siguiente gráfico ilustra visualmente la distribución de este tiempo.</p>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                <div class="chart-container" style="height: 250px; max-height: 300px;">
+                                    <canvas id="timelineChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-6">Funcionalidades Técnicas Incluidas</h3>
+                            <p class="text-gray-600 mb-6">Seleccione una categoría para ver las funcionalidades detalladas incluidas en esta propuesta.</p>
+                            
+                            <div class="mb-4">
+                                <nav id="tabs-nav" class="flex space-x-2" aria-label="Tabs">
+                                    <button class="tab-button active" data-tab="tab-ecommerce">E-commerce</button>
+                                    <button class="tab-button" data-tab="tab-afiliacion">Afiliación</button>
+                                    <button class="tab-button" data-tab="tab-generales">Generales</button>
+                                </nav>
+                            </div>
+
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                                <div id="tab-ecommerce" class="tab-content p-0">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funcionalidad</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Carrito de Compras</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Agregar/eliminar productos (Aceite + Accesorios).</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Checkout Simplificado</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Proceso de pago intuitivo en pocos pasos.</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Pasarela de Pago</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Integración con 1 plataforma local (ej. PayU, Mercado Pago) sin API compleja.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="tab-afiliacion" class="tab-content hidden p-0">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funcionalidad</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Formulario de Registro</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Captación de datos básicos para aspirantes a afiliados.</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Base de Datos Básica</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Almacenamiento de registros en el CMS o hoja de cálculo.</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Sistema de Enlaces</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Generación de links simples para administración manual (sin panel de control).</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="tab-generales" class="tab-content hidden p-0">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funcionalidad</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            <!-- ********** AJUSTE REALIZADO AQUÍ ********** -->
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CMS (Panel de Admin) a la Medida</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Desarrollo de un CMS customizado con <strong>Next.js/React y Java</strong> para la gestión de productos, inventario y afiliados. Esto asegura <strong>máximo rendimiento</strong> y escalabilidad.</td>
+                                            </tr>
+                                            <!-- ******************************************* -->
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Diseño Responsive</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Adaptabilidad total a móviles, tabletas y computadoras.</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Captura de Leads</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Formularios para correos y WhatsApp.</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Integración Social</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600">Enlaces visibles a TikTok, Instagram y Facebook.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-6">Exclusiones y Limitaciones</h3>
+                            <p class="text-gray-600 mb-6">Para mantener el proyecto en el presupuesto de <strong>$800.000 COP</strong>, es importante notar lo que <strong>no</strong> está incluido:</p>
+                            <ul class="list-disc list-outside space-y-2 pl-5 text-gray-700 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                <li><strong>Creación de Contenidos:</strong> No incluye redacción de textos ni creación/edición de imágenes/videos. Mepham debe proveer los activos visuales y textos finales.</li>
+                                <li><strong>Hosting y Dominio:</strong> Estos costos operativos son responsabilidad del cliente.</li>
+                                <li><strong>Módulo de Afiliados Avanzado:</strong> No incluye panel de control para afiliados, cálculo automático de comisiones, ni seguimiento de clics. La gestión inicial será manual.</li>
+                                <li><strong>SEO Avanzado y Blog:</strong> No se incluye estrategia de contenido ni desarrollo de un blog estructurado.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <hr class="border-gray-200">
+
+            <section id="inversion">
+                <div class="max-w-5xl">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Inversión y Condiciones de Pago</h2>
+                    <p class="text-lg text-gray-600 mb-8">
+                        Detalle transparente de la inversión total de <strong>$800.000 COP</strong> y la estructura de pagos 50/50.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-6 text-center">Desglose de la Inversión</h3>
+                            <div class="chart-container" style="height: 300px; max-height: 350px;">
+                                <canvas id="budgetChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-6 text-center">Condiciones de Pago</h3>
+                            <div class="chart-container" style="height: 300px; max-height: 350px;">
+                                <canvas id="paymentChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="border-gray-200">
+
+            <section id="pasos">
+                <div class="max-w-5xl">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Próximos Pasos</h2>
+                    <p class="text-lg text-gray-600 mb-8">
+                        El proyecto comenzaría en <strong>Noviembre</strong> y finalizaría la <strong>primera semana de Enero</strong>. Para iniciar el proyecto y asegurar estas fechas, estos son los pasos:
+                    </p>
+                    <ol class="list-decimal list-outside space-y-4 pl-5 text-gray-700 text-lg">
+                        <li><strong>Aceptación:</strong> Responder al correo confirmando la aprobación de la propuesta.</li>
+                        <li><strong>Pago Inicial:</strong> Realizar el pago en efectivo o transferencia del 50% ($400.000 COP).</li>
+                        <li><strong>Kick-off:</strong> Programar la reunión inicial para el descubrimiento de contenido y <strong>storytelling</strong>.</li>
+                    </ol>
+                    <a href="mailto:[abisfigueredo@gmail.com]?subject=Aprobación%20Propuesta%20Mepham" class="inline-block bg-orange-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-orange-700 transition-all duration-300 mt-8 text-lg">
+                        Aprobar Propuesta e Iniciar
+                    </a>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const tailwindColors = {
+                orange: {
+                    100: '#fffaf0',
+                    200: '#feebc8',
+                    500: '#ed8936',
+                    600: '#dd6b20',
+                    700: '#c05621'
+                },
+                gray: {
+                    400: '#a0aec0',
+                    700: '#4a5568'
+                },
+                green: {
+                    500: '#48bb78'
+                },
+                blue: {
+                    500: '#4299e1'
+                }
+            };
+
+            const budgetCtx = document.getElementById('budgetChart').getContext('2d');
+            new Chart(budgetCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Desarrollo E-commerce', 'Funcionalidad Afiliados', 'Diseño UX/UI', 'Configuración CMS'],
+                    datasets: [{
+                        data: [450000, 200000, 100000, 50000],
+                        backgroundColor: [tailwindColors.orange[600], tailwindColors.orange[500], tailwindColors.orange[200], tailwindColors.gray[400]],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+            new Chart(paymentCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Pago Inicial (50%)', 'Pago Final (50%)'],
+                    datasets: [{
+                        data: [400000, 400000],
+                        backgroundColor: [tailwindColors.green[500], tailwindColors.gray[700]],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            // Ajuste de las semanas: 9 semanas totales.
+            new Chart(timelineCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Fase 1: Planeación', 'Fase 2: Diseño UX/UI', 'Fase 3: Desarrollo', 'Fase 4: Pruebas y Lanzamiento'],
+                    datasets: [{
+                        label: 'Duración (Semanas)',
+                        // Fechas ajustadas: Planeación (-1), Pruebas (-1), Diseño (+1), Desarrollo (+1)
+                        data: [
+                            [0, 0.5], // Planeación: 0.5 semanas
+                            [0, 4.5], // Diseño: 4.5 semanas (se solapa con planeación)
+                            [4, 8],   // Desarrollo: 4 semanas (se solapa con diseño)
+                            [8, 9]    // Pruebas: 1 semana
+                        ],
+                        backgroundColor: [
+                            tailwindColors.orange[500],
+                            tailwindColors.blue[500],
+                            tailwindColors.green[500],
+                            tailwindColors.gray[700]
+                        ],
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.7
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw;
+                                    // Muestra el rango de semanas
+                                    return `Semana ${val[0]} a Semana ${val[1]}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 9, // Máximo de 9 semanas
+                            title: {
+                                display: true,
+                                text: 'Semanas del Proyecto (Noviembre - Enero)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // --- Lógica para Pestañas de Funcionalidades ---
+            const tabsContainer = document.getElementById('tabs-nav');
+            const tabButtons = tabsContainer.querySelectorAll('.tab-button');
+            const tabContents = tabsContainer.parentElement.parentElement.querySelectorAll('.tab-content');
+
+            tabsContainer.addEventListener('click', (e) => {
+                const clickedTab = e.target.closest('.tab-button');
+                if (!clickedTab) return;
+
+                e.preventDefault();
+
+                tabButtons.forEach(button => {
+                    button.classList.remove('active', 'bg-orange-600', 'text-white', 'shadow-sm');
+                    button.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+
+                clickedTab.classList.add('active', 'bg-orange-600', 'text-white', 'shadow-sm');
+                clickedTab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+
+                document.getElementById(clickedTab.dataset.tab).classList.remove('hidden');
+            });
+            // --- Fin Lógica Pestañas de Funcionalidades ---
+
+            // --- Lógica para Pestañas de Mockups (Estructura) ---
+            const mockupTabsContainer = document.getElementById('mockup-tabs-nav');
+            const mockupTabButtons = mockupTabsContainer.querySelectorAll('.tab-button');
+            const mockupTabContents = document.querySelectorAll('.tab-content-mockup');
+            const mockupTitle = document.getElementById('mockup-title');
+
+            if (mockupTabsContainer) {
+                mockupTabsContainer.addEventListener('click', (e) => {
+                    const clickedTab = e.target.closest('.tab-button');
+                    if (!clickedTab || clickedTab.parentElement.id !== 'mockup-tabs-nav') return;
+
+                    e.preventDefault();
+                    
+                    const tabId = clickedTab.dataset.tabMockup;
+
+                    mockupTabButtons.forEach(button => {
+                        button.classList.remove('active', 'bg-orange-600', 'text-white', 'shadow-sm');
+                        button.classList.add('text-gray-600', 'hover:bg-gray-100');
+                    });
+
+                    clickedTab.classList.add('active', 'bg-orange-600', 'text-white', 'shadow-sm');
+                    clickedTab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+
+                    mockupTabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+
+                    const activeContent = document.getElementById(tabId);
+                    if (activeContent) {
+                        activeContent.classList.remove('hidden');
+                        // Actualiza el título
+                        mockupTitle.textContent = clickedTab.textContent;
+                    }
+                });
+            }
+
+            // Inicializar las pestañas de mockups para que se vea el contenido al cargar
+            if (mockupTabButtons.length > 0) {
+                // Asegura que el botón inicial esté activo
+                mockupTabButtons[0].classList.add('active', 'bg-orange-600', 'text-white', 'shadow-sm');
+                mockupTabButtons[0].classList.remove('text-gray-600', 'hover:bg-gray-100');
+                // Asegura que el contenido inicial esté visible
+                document.getElementById(mockupTabButtons[0].dataset.tabMockup).classList.remove('hidden');
+            }
+            // --- Fin Lógica Pestañas de Mockups ---
+
+            const navLinks = document.querySelectorAll('#main-nav a');
+            const sections = document.querySelectorAll('main section');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.3
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`);
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
